@@ -128,6 +128,10 @@ function printArea() {
 }
 
 function keydown(e) {
+    if (detectCollision()) {
+        return;
+    }
+
     switch (e.code) {
         case "ArrowUp":
             rotateClockwise();
@@ -172,6 +176,7 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+
 function initShape() {
     getNextShape();
     getCurrentShape();
@@ -196,3 +201,45 @@ document.addEventListener('keydown', keydown);
 initShape();
 initArea();
 printArea();
+
+var t = setInterval(refreshScreen, 800);
+
+function refreshScreen() {
+    keydown({ code: "ArrowDown" });
+}
+
+function detectCollision() {
+    let shape = shapes[currentShape.code][currentShape.rotation];
+    let x = currentShape.x;
+    let y = currentShape.y;
+
+    let cells = [];
+    for (let i = 0; i < shape[0].length; i++) {
+        for (let j = shape.length - 1; j >= 0; j--) {
+            if (shape[i][j] === 1) {
+                cells.push({ i, j });
+            }
+        }
+    }
+
+    // detect bottom collision...
+    for (let i = 0; i < cells.length; i++) {
+        let cell = cells[i];
+        if (area[cell.i + y][cell.j + x] === 1) {
+            return true;
+        }
+        if (cell.j + x < 1 || cell.j + x > COLS) {
+            return true;
+        }
+        if (cell.i + y > ROWS) {
+            for (let j = 0; j < cells.length; j++) {
+                let innerCell = cells[j];
+                area[innerCell.i + y][innerCell.j + x] = 1;
+            }
+            getCurrentShape();
+            return true;
+        }
+    }
+
+    return false;
+}
