@@ -25,13 +25,48 @@ const colors = [
 ];
 
 const shapes = [
-    [[1], [1], [1], [1]],
-    [[1, 1, 1], [0, 1, 0]],
-    [[1, 1, 0], [0, 1, 1]],
-    [[0, 1, 1], [1, 1, 0]],
-    [[1, 1], [1, 1]],
-    [[1, 0], [1, 0], [1, 1]],
-    [[0, 1], [0, 1], [1, 1]]
+    [
+        [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
+        [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]],
+        [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]],
+        [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]
+    ],
+    [
+        [[0, 1, 0], [1, 1, 1], [0, 0, 0]],
+        [[0, 1, 0], [0, 1, 1], [0, 1, 0]],
+        [[0, 0, 0], [1, 1, 1], [0, 1, 0]],
+        [[0, 1, 0], [1, 1, 0], [0, 1, 0]]
+    ],
+    [
+        [[1, 1, 0], [0, 1, 1], [0, 0, 0]],
+        [[0, 0, 1], [0, 1, 1], [0, 1, 0]],
+        [[0, 0, 0], [1, 1, 0], [0, 1, 1]],
+        [[0, 1, 0], [1, 1, 0], [1, 0, 0]]
+    ],
+    [
+        [[0, 1, 1], [1, 1, 0], [0, 0, 0]],
+        [[0, 1, 0], [0, 1, 1], [0, 0, 1]],
+        [[0, 0, 0], [0, 1, 1], [1, 1, 0]],
+        [[1, 0, 0], [1, 1, 0], [0, 1, 0]]
+    ],
+    [
+        [[1, 1], [1, 1]],
+        [[1, 1], [1, 1]],
+        [[1, 1], [1, 1]],
+        [[1, 1], [1, 1]]
+    ],
+    [
+        [[0, 0, 1], [1, 1, 1], [0, 0, 0]],
+        [[0, 1, 0], [0, 1, 0], [0, 1, 1]],
+        [[0, 0, 0], [1, 1, 1], [1, 0, 0]],
+        [[1, 1, 0], [0, 1, 0], [0, 1, 0]]
+    ],
+    [
+        [[1, 0, 0], [1, 1, 1], [0, 0, 0]],
+        [[0, 1, 1], [0, 1, 0], [0, 1, 0]],
+        [[0, 0, 0], [1, 1, 1], [0, 0, 1]],
+        [[0, 1, 0], [0, 1, 0], [1, 1, 0]]
+    ]
 ];
 
 function initArea() {
@@ -70,7 +105,7 @@ function drawCell(i, j) {
 }
 
 function drawShape() {
-    let shape = shapes[currentShape.code];
+    let shape = shapes[currentShape.code][currentShape.rotation];
 
     for (let i = 0; i < shape.length; i++) {
         for (let j = 0; j < shape[i].length; j++) {
@@ -95,7 +130,7 @@ function printArea() {
 function keydown(e) {
     switch (e.code) {
         case "ArrowUp":
-            currentShape.y--
+            rotateClockwise();
             break;
         case "ArrowDown":
             currentShape.y++;
@@ -107,11 +142,22 @@ function keydown(e) {
             currentShape.x++;
             break;
         case "Space":
-            getNextShape();
+            rotateCounterClockwise();
+            break;
+        case "KeyN":
+            getCurrentShape();
             break;
     }
 
     printArea();
+}
+
+function rotateClockwise() {
+    currentShape.rotation = (currentShape.rotation + 1) % 4;
+}
+
+function rotateCounterClockwise() {
+    currentShape.rotation = (currentShape.rotation + 3) % 4;
 }
 
 function createSet() {
@@ -126,20 +172,27 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+function initShape() {
+    getNextShape();
+    getCurrentShape();
+}
 
 function getNextShape() {
-    if (nextShape === undefined) {
-        nextShape = { x: 4, y: 0, code: currentSet.pop() };
-    }
-    currentShape = { x: 4, y: 0, code: nextShape.code };
+    nextShape = { x: 4, y: 0, code: currentSet.pop(), rotation: Math.floor(Math.random() * 4) };
+}
+
+function getCurrentShape() {
+    currentShape = { x: 4, y: 0, code: nextShape.code, rotation: nextShape.rotation };
+
     if (currentSet.length === 0) {
         currentSet = createSet();
     }
-    nextShape = { x: 4, y: 0, code: currentSet.pop() };
+
+    getNextShape();
 }
 
 document.addEventListener('keydown', keydown);
 
-getNextShape();
+initShape();
 initArea();
 printArea();
