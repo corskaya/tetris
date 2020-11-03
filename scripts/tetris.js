@@ -8,7 +8,10 @@ const CANVAS_WIDTH = canvas.width = COLS * CELL_SIZE;
 const Cell = { I: 0, T: 1, Z: 2, S: 3, O: 4, L: 5, J: 6, Space: 7 }; Object.freeze(Cell);
 
 let area;
-let currentShape = { x: 0, y: 0, code: Cell.T, rotate: 0 };
+let currentSet = createSet();
+let nextSet = createSet();
+let currentShape;
+let nextShape;
 
 const colors = [
     'rgb(64,224,208)',
@@ -59,7 +62,6 @@ function drawArea() {
             drawCell(i, j);
         }
     }
-    stroke(0, 0, 'rgb(0, 0, 0)', CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
 function drawCell(i, j) {
@@ -74,14 +76,20 @@ function drawShape() {
         for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j] === 1) {
                 fill(i + currentShape.y, j + currentShape.x, colors[currentShape.code]);
+                stroke(i + currentShape.y, j + currentShape.x, 'rgb(100, 100, 100)');
             }
         }
     }
 }
 
+function drawBorder() {
+    stroke(0, 0, 'rgb(0, 0, 0)', CANVAS_WIDTH, CANVAS_HEIGHT);
+}
+
 function printArea() {
     drawArea();
     drawShape();
+    drawBorder();
 }
 
 function keydown(e) {
@@ -99,13 +107,39 @@ function keydown(e) {
             currentShape.x++;
             break;
         case "Space":
+            getNextShape();
             break;
     }
 
     printArea();
 }
 
+function createSet() {
+    let set = [Cell.I, Cell.T, Cell.Z, Cell.S, Cell.O, Cell.L, Cell.J];
+    shuffleArray(set);
+    return set;
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function getNextShape() {
+    if (nextShape === undefined) {
+        nextShape = { x: 4, y: 0, code: currentSet.pop() };
+    }
+    currentShape = { x: 4, y: 0, code: nextShape.code };
+    if (currentSet.length === 0) {
+        currentSet = createSet();
+    }
+    nextShape = { x: 4, y: 0, code: currentSet.pop() };
+}
+
 document.addEventListener('keydown', keydown);
 
+getNextShape();
 initArea();
 printArea();
