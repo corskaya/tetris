@@ -283,9 +283,12 @@ function detectCollision(code) {
                     if (newJ < 0 || newJ >= COLS) {
                         return true;
                     }
-                    if (newI >= ROWS || area[newI][newJ] !== Cell.Space) {
+                    if (newI >= ROWS || (direction[0] > 0 && area[newI][newJ] !== Cell.Space)) {
                         freezeShape();
                         getCurrentShape();
+                        return true;
+                    }
+                    if (area[newI][newJ] !== Cell.Space) {
                         return true;
                     }
                 }
