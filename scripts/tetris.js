@@ -101,7 +101,9 @@ function drawArea() {
 
 function drawCell(i, j) {
     fill(i, j, colors[area[i][j]]);
-    stroke(i, j, area[i][j] !== Cell.Space ? 'rgb(0, 0, 0)' : 'rgb(200, 200, 200)');
+    if (area[i][j] === Cell.Space) {
+        stroke(i, j, 'rgb(200, 200, 200)');
+    }
 }
 
 function drawShape() {
@@ -111,7 +113,7 @@ function drawShape() {
         for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j] === 1) {
                 fill(i + currentShape.y, j + currentShape.x, colors[currentShape.code]);
-                stroke(i + currentShape.y, j + currentShape.x, 'rgb(100, 100, 100)');
+                // stroke(i + currentShape.y, j + currentShape.x, 'rgb(100, 100, 100)');
             }
         }
     }
@@ -148,9 +150,6 @@ function keydown(e) {
         case "Space":
             rotateCounterClockwise();
             break;
-        // case "KeyN":
-        //     getCurrentShape();
-        //     break;
     }
 
     printArea();
@@ -194,6 +193,9 @@ function getCurrentShape() {
     }
 
     getNextShape();
+    if (area !== undefined) {
+        keydown({ code: "ArrowDown" });
+    }
 }
 
 document.addEventListener('keydown', keydown);
@@ -210,6 +212,8 @@ function refreshScreen() {
 
 function detectCollision(code) {
     let direction = [0, 0];
+    let isRotation = false;
+
     switch (code) {
         case "ArrowDown":
             direction = [1, 0];
@@ -220,49 +224,95 @@ function detectCollision(code) {
         case "ArrowRight":
             direction = [0, 1];
             break;
+        case "ArrowUp":
+            isRotation = true;
+            break;
+        case "Space":
+            isRotation = true;
+            break;
     }
 
-    let shape = shapes[currentShape.code][currentShape.rotation];
     let x = currentShape.x;
     let y = currentShape.y;
 
-    let cells = [];
-    for (let i = 0; i < shape.length; i++) {
-        for (let j = 0; j < shape[i].length; j++) {
-            if (shape[i][j] === 1) {
-                cells.push({ x: i + y + direction[0], y: j + x + direction[1] });
+    if (isRotation) {
+        let rotation = code === "ArrowUp" ? 1 : -1;
+        let rotatedShape = shapes[currentShape.code][(currentShape.rotation + rotation + 4) % 4];
+        let maxLeft = 0;
+        let maxRight = 0;
+        for (let i = 0; i < rotatedShape.length; i++) {
+            for (let j = 0; j < rotatedShape[i].length; j++) {
+                if (rotatedShape[i][j] === 1) {
+                    let newI = i + y;
+                    let newJ = j + x;
+                    if (newI >= ROWS || (newJ >= 0 && newJ < COLS && area[newI][newJ] !== Cell.Space)) {
+                        return true;
+                    }
+                    if (newJ < 0) {
+                        let left = 0 - newJ;
+                        if (left > maxLeft) maxLeft = left;
+                    } if (newJ >= COLS) {
+                        let right = newJ - COLS + 1;
+                        if (right > maxRight) maxRight = right;
+                    }
+                }
             }
         }
-    }
-
-    for (let i = 0; i < shape[0].length; i++) {
-        for (let j = shape.length - 1; j >= 0; j--) {
-            if (shape[j][i] === 1) {
-                let newI = j + y + direction[0];
-                let newJ = i + x + direction[1];
-                if (newJ < 0 || newJ >= COLS) {
-                    return true;
+        if (maxLeft > 0 || maxRight > 0) {
+            for (let i = 0; i < rotatedShape.length; i++) {
+                for (let j = 0; j < rotatedShape[i].length; j++) {
+                    if (rotatedShape[i][j] === 1) {
+                        let newI = i + y + direction[0];
+                        let newJ = j + x + (maxLeft > 0 ? maxLeft : -maxRight);
+                        if (area[newI][newJ] !== Cell.Space) {
+                            return true;
+                        }
+                    }
                 }
-                if (newI >= ROWS || area[newI][newJ] !== Cell.Space) {
-                    freezeShape();
-                    getCurrentShape();
-                    return true;
+            }
+            currentShape.x += maxLeft;
+            currentShape.x -= maxRight;
+        }
+    } else {
+        let shape = shapes[currentShape.code][currentShape.rotation];
+        for (let i = 0; i < shape[0].length; i++) {
+            for (let j = shape.length - 1; j >= 0; j--) {
+                if (shape[j][i] === 1) {
+                    let newI = j + y + direction[0];
+                    let newJ = i + x + direction[1];
+                    if (newJ < 0 || newJ >= COLS) {
+                        return true;
+                    }
+                    if (newI >= ROWS || area[newI][newJ] !== Cell.Space) {
+                        freezeShape();
+                        getCurrentShape();
+                        return true;
+                    }
                 }
             }
         }
-    }
 
-    for (let i = 0; i < cells.length; i++) {
-        let cell = cells[i];
-        if (cell.y < 0 || cell.y >= COLS) {
-            return true;
+        let cells = [];
+        for (let i = 0; i < shape.length; i++) {
+            for (let j = 0; j < shape[i].length; j++) {
+                if (shape[i][j] === 1) {
+                    cells.push({ x: i + y + direction[0], y: j + x + direction[1] });
+                }
+            }
         }
-        if (area[cell.x][cell.y] !== Cell.Space) {
-            return true;
-        }
-    }
 
-    return false;
+        for (let i = 0; i < cells.length; i++) {
+            let cell = cells[i];
+            if (cell.y < 0 || cell.y >= COLS) {
+                return true;
+            }
+            if (area[cell.x][cell.y] !== Cell.Space) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 function freezeShape() {
