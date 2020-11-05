@@ -128,7 +128,7 @@ function printArea() {
 }
 
 function keydown(e) {
-    if (detectCollision()) {
+    if (detectCollision(e.code)) {
         return;
     }
 
@@ -148,9 +148,9 @@ function keydown(e) {
         case "Space":
             rotateCounterClockwise();
             break;
-        case "KeyN":
-            getCurrentShape();
-            break;
+        // case "KeyN":
+        //     getCurrentShape();
+        //     break;
     }
 
     printArea();
@@ -208,38 +208,94 @@ function refreshScreen() {
     keydown({ code: "ArrowDown" });
 }
 
-function detectCollision() {
+function detectCollision(code) {
+    let direction = [0, 0];
+    switch (code) {
+        case "ArrowDown":
+            direction = [1, 0];
+            break;
+        case "ArrowLeft":
+            direction = [0, -1];
+            break;
+        case "ArrowRight":
+            direction = [0, 1];
+            break;
+    }
+
     let shape = shapes[currentShape.code][currentShape.rotation];
     let x = currentShape.x;
     let y = currentShape.y;
 
     let cells = [];
-    for (let i = 0; i < shape[0].length; i++) {
-        for (let j = shape.length - 1; j >= 0; j--) {
+    for (let i = 0; i < shape.length; i++) {
+        for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j] === 1) {
-                cells.push({ i, j });
+                cells.push({ x: i + y + direction[0], y: j + x + direction[1] });
             }
         }
     }
 
-    // detect bottom collision...
+    for (let i = 0; i < shape[0].length; i++) {
+        for (let j = shape.length - 1; j >= 0; j--) {
+            if (shape[j][i] === 1) {
+                let newI = j + y + direction[0];
+                let newJ = i + x + direction[1];
+                if (newJ < 0 || newJ >= COLS) {
+                    return true;
+                }
+                if (newI >= ROWS || area[newI][newJ] !== Cell.Space) {
+                    freezeShape();
+                    getCurrentShape();
+                    return true;
+                }
+            }
+        }
+    }
+
     for (let i = 0; i < cells.length; i++) {
         let cell = cells[i];
-        if (area[cell.i + y][cell.j + x] === 1) {
+        if (cell.y < 0 || cell.y >= COLS) {
             return true;
         }
-        if (cell.j + x < 1 || cell.j + x > COLS) {
-            return true;
-        }
-        if (cell.i + y > ROWS) {
-            for (let j = 0; j < cells.length; j++) {
-                let innerCell = cells[j];
-                area[innerCell.i + y][innerCell.j + x] = 1;
-            }
-            getCurrentShape();
+        if (area[cell.x][cell.y] !== Cell.Space) {
             return true;
         }
     }
 
     return false;
+}
+
+function freezeShape() {
+    let shape = shapes[currentShape.code][currentShape.rotation];
+    for (let i = 0; i < shape.length; i++) {
+        for (let j = 0; j < shape[i].length; j++) {
+            if (shape[i][j] === 1) {
+                area[i + currentShape.y][j + currentShape.x] = currentShape.code;
+            }
+        }
+    }
+
+    let remainingBlocks = [];
+    for (let i = 0; i < ROWS; i++) {
+        for (let j = 0; j < COLS; j++) {
+            if (area[i][j] === Cell.Space) {
+                remainingBlocks.push(i);
+                break;
+            }
+        }
+    }
+
+    for (let i = ROWS - 1; i >= 0; i--) {
+        if (remainingBlocks.indexOf(i) === -1) {
+            area.splice(i, 1);
+        }
+    }
+
+    for (let i = ROWS - remainingBlocks.length - 1; i >= 0; i--) {
+        let newSpaceBlock = [];
+        for (let j = 0; j < COLS; j++) {
+            newSpaceBlock.push(Cell.Space);
+        }
+        area.unshift(newSpaceBlock);
+    }
 }
