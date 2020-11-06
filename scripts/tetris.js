@@ -149,6 +149,10 @@ function keydown(e) {
         return;
     }
 
+    if (isPaused && e.code !== "KeyP") {
+        return;
+    }
+
     if (detectCollision(e.code)) {
         return;
     }
@@ -169,6 +173,9 @@ function keydown(e) {
         case "Space":
             currentShape.rotation = (currentShape.rotation + 3) % 4;
             break;
+        case "KeyP":
+            pauseGame();
+            return;
     }
 
     printArea();
@@ -382,16 +389,41 @@ function gameOver() {
     ctx.fillText('Press "R" to restart', 55, startHeight + 210);
 }
 
+function pauseGame() {
+    if (isPaused) {
+        isPaused = false;
+        timer = setInterval(refreshScreen, 800);
+    } else {
+        gamePaused();
+    }
+}
+
+function gamePaused() {
+    isPaused = true;
+    clearInterval(timer);
+
+    const startHeight = (CANVAS_HEIGHT - CANVAS_MESSAGE_SIZE) / 2;
+    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.fillRect(0, startHeight, CANVAS_WIDTH, CANVAS_MESSAGE_SIZE);
+    ctx.font = '48px serif';
+    ctx.fillStyle = 'rgb(255, 255, 255)';
+    ctx.fillText('GAME PAUSED', 35, startHeight + 60);
+    ctx.font = '36px serif';
+    ctx.fillText('Press "P" to resume', 55, startHeight + 210);
+}
+
 let area;
 let currentSet;
 let nextSet;
 let currentShape;
 let nextShape;
 let isGameOver;
+let isPaused;
 let timer;
 
 function restartGame() {
     isGameOver = false;
+    isPaused = false;
     currentSet = createSet();
     nextSet = createSet();
     initShape();
