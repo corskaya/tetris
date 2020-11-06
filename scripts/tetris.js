@@ -69,6 +69,16 @@ const shapes = [
     ]
 ];
 
+const startPositions = [
+    [{ x: 3, y: -2 }, { x: 3, y: -4 }, { x: 3, y: -3 }, { x: 3, y: -4 }],
+    [{ x: 4, y: -2 }, { x: 3, y: -3 }, { x: 4, y: -3 }, { x: 4, y: -3 }],
+    [{ x: 4, y: -2 }, { x: 3, y: -3 }, { x: 4, y: -3 }, { x: 4, y: -3 }],
+    [{ x: 4, y: -2 }, { x: 3, y: -3 }, { x: 4, y: -3 }, { x: 4, y: -3 }],
+    [{ x: 4, y: -2 }, { x: 4, y: -2 }, { x: 4, y: -2 }, { x: 4, y: -2 }],
+    [{ x: 4, y: -2 }, { x: 3, y: -3 }, { x: 4, y: -3 }, { x: 4, y: -3 }],
+    [{ x: 4, y: -2 }, { x: 3, y: -3 }, { x: 4, y: -3 }, { x: 4, y: -3 }],
+];
+
 function initArea() {
     area = [];
     for (let i = 0; i < ROWS; i++) {
@@ -182,11 +192,15 @@ function initShape() {
 }
 
 function getNextShape() {
-    nextShape = { x: 4, y: 0, code: currentSet.pop(), rotation: Math.floor(Math.random() * 4) };
+    let code = currentSet.pop();
+    let rotation = Math.floor(Math.random() * 4);
+    let startPosition = startPositions[code][rotation];
+
+    nextShape = { x: startPosition.x, y: startPosition.y, code, rotation };
 }
 
 function getCurrentShape() {
-    currentShape = { x: 4, y: 0, code: nextShape.code, rotation: nextShape.rotation };
+    currentShape = { x: nextShape.x, y: nextShape.y, code: nextShape.code, rotation: nextShape.rotation };
 
     if (currentSet.length === 0) {
         currentSet = createSet();
@@ -245,7 +259,7 @@ function detectCollision(code) {
                 if (rotatedShape[i][j] === 1) {
                     let newI = i + y;
                     let newJ = j + x;
-                    if (newI >= ROWS || (newJ >= 0 && newJ < COLS && area[newI][newJ] !== Cell.Space)) {
+                    if (newI >= ROWS || (newJ >= 0 && newJ < COLS && newI >= 0 && area[newI][newJ] !== Cell.Space)) {
                         return true;
                     }
                     if (newJ < 0) {
@@ -279,6 +293,9 @@ function detectCollision(code) {
             for (let j = shape.length - 1; j >= 0; j--) {
                 if (shape[j][i] === 1) {
                     let newI = j + y + direction[0];
+                    if (newI < 0) {
+                        break;
+                    }
                     let newJ = i + x + direction[1];
                     if (newJ < 0 || newJ >= COLS) {
                         return true;
@@ -299,7 +316,11 @@ function detectCollision(code) {
         for (let i = 0; i < shape.length; i++) {
             for (let j = 0; j < shape[i].length; j++) {
                 if (shape[i][j] === 1) {
-                    cells.push({ x: i + y + direction[0], y: j + x + direction[1] });
+                    let x1 = i + y + direction[0];
+                    let y1 = j + x + direction[1];
+                    if (x1 >= 0) {
+                        cells.push({ x: x1, y: y1 });
+                    }
                 }
             }
         }
