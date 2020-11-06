@@ -3,9 +3,13 @@ const ctx = canvas.getContext('2d');
 const ROWS = 20;
 const COLS = 10;
 const CELL_SIZE = 40;
-const CANVAS_HEIGHT = canvas.height = ROWS * CELL_SIZE;
-const CANVAS_WIDTH = canvas.width = COLS * CELL_SIZE;
+const CANVAS_HEIGHT = ROWS * CELL_SIZE;
+const CANVAS_WIDTH = COLS * CELL_SIZE;
 const CANVAS_MESSAGE_SIZE = 6 * CELL_SIZE;
+
+const CANVAS_INFO_WIDTH = 6 * CELL_SIZE;
+canvas.height = CANVAS_HEIGHT;
+canvas.width = CANVAS_WIDTH + CANVAS_INFO_WIDTH;
 
 const Cell = { I: 0, T: 1, Z: 2, S: 3, O: 4, L: 5, J: 6, Space: 7 };
 
@@ -108,7 +112,6 @@ function drawShape() {
         for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j] === 1) {
                 fill(i + currentShape.y, j + currentShape.x, colors[currentShape.code]);
-                // stroke(i + currentShape.y, j + currentShape.x, 'rgb(100, 100, 100)');
             }
         }
     }
@@ -116,6 +119,26 @@ function drawShape() {
 
 function drawBorder() {
     stroke(0, 0, 'rgb(0, 0, 0)', CANVAS_WIDTH, CANVAS_HEIGHT);
+    stroke(0, COLS, 'rgb(0, 0, 0)', CANVAS_INFO_WIDTH, CANVAS_HEIGHT);
+}
+
+function drawNextShape() {
+    ctx.clearRect(CANVAS_WIDTH, CELL_SIZE, CANVAS_INFO_WIDTH, CANVAS_HEIGHT);
+    let shape = shapes[nextShape.code][nextShape.rotation];
+
+    for (let i = 0; i < shape.length; i++) {
+        for (let j = 0; j < shape[i].length; j++) {
+            if (shape[i][j] === 1) {
+                fill(i + 1, j + COLS + 1, colors[nextShape.code]);
+            }
+        }
+    }
+}
+
+function drawNextLabel() {
+    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.font = '36px serif';
+    ctx.fillText('NEXT', CANVAS_WIDTH + 70, 30);
 }
 
 function initShape() {
@@ -200,6 +223,7 @@ function getNextShape() {
     let startPosition = startPositions[code][rotation];
 
     nextShape = { x: startPosition.x, y: startPosition.y, code, rotation };
+    drawNextShape();
 }
 
 function getCurrentShape() {
@@ -436,4 +460,5 @@ document.addEventListener('keydown', keydown);
 
 window.onload = () => {
     restartGame();
+    drawNextLabel();
 }
