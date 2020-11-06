@@ -5,13 +5,9 @@ const COLS = 10;
 const CELL_SIZE = 40;
 const CANVAS_HEIGHT = canvas.height = ROWS * CELL_SIZE;
 const CANVAS_WIDTH = canvas.width = COLS * CELL_SIZE;
-const Cell = { I: 0, T: 1, Z: 2, S: 3, O: 4, L: 5, J: 6, Space: 7 }; Object.freeze(Cell);
+const CANVAS_MESSAGE_SIZE = 6 * CELL_SIZE;
 
-let area;
-let currentSet = createSet();
-let nextSet = createSet();
-let currentShape;
-let nextShape;
+const Cell = { I: 0, T: 1, Z: 2, S: 3, O: 4, L: 5, J: 6, Space: 7 };
 
 const colors = [
     'rgb(64,224,208)',
@@ -79,17 +75,6 @@ const startPositions = [
     [{ x: 4, y: -2 }, { x: 3, y: -3 }, { x: 4, y: -3 }, { x: 4, y: -3 }],
 ];
 
-function initArea() {
-    area = [];
-    for (let i = 0; i < ROWS; i++) {
-        let row = [];
-        for (let j = 0; j < COLS; j++) {
-            row.push(Cell.Space);
-        }
-        area.push(row);
-    }
-}
-
 function fill(i, j, color) {
     ctx.fillStyle = color;
     ctx.fillRect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE);
@@ -133,6 +118,22 @@ function drawBorder() {
     stroke(0, 0, 'rgb(0, 0, 0)', CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
+function initShape() {
+    getNextShape();
+    getCurrentShape();
+}
+
+function initArea() {
+    area = [];
+    for (let i = 0; i < ROWS; i++) {
+        let row = [];
+        for (let j = 0; j < COLS; j++) {
+            row.push(Cell.Space);
+        }
+        area.push(row);
+    }
+}
+
 function printArea() {
     drawArea();
     drawShape();
@@ -140,14 +141,19 @@ function printArea() {
 }
 
 function keydown(e) {
+    if (isGameOver) {
+        if (e.code !== "KeyR") {
+            return;
+        }
+        restartGame();
+        return;
+    }
+
     if (detectCollision(e.code)) {
         return;
     }
 
     switch (e.code) {
-        case "ArrowUp":
-            rotateClockwise();
-            break;
         case "ArrowDown":
             currentShape.y++;
             break;
@@ -157,20 +163,15 @@ function keydown(e) {
         case "ArrowRight":
             currentShape.x++;
             break;
+        case "ArrowUp":
+            currentShape.rotation = (currentShape.rotation + 1) % 4;
+            break;
         case "Space":
-            rotateCounterClockwise();
+            currentShape.rotation = (currentShape.rotation + 3) % 4;
             break;
     }
 
     printArea();
-}
-
-function rotateClockwise() {
-    currentShape.rotation = (currentShape.rotation + 1) % 4;
-}
-
-function rotateCounterClockwise() {
-    currentShape.rotation = (currentShape.rotation + 3) % 4;
 }
 
 function createSet() {
@@ -184,11 +185,6 @@ function shuffleArray(array) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
-}
-
-function initShape() {
-    getNextShape();
-    getCurrentShape();
 }
 
 function getNextShape() {
@@ -211,14 +207,6 @@ function getCurrentShape() {
         keydown({ code: "ArrowDown" });
     }
 }
-
-document.addEventListener('keydown', keydown);
-
-initShape();
-initArea();
-printArea();
-
-var t = setInterval(refreshScreen, 800);
 
 function refreshScreen() {
     keydown({ code: "ArrowDown" });
@@ -344,7 +332,13 @@ function freezeShape() {
     for (let i = 0; i < shape.length; i++) {
         for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j] === 1) {
-                area[i + currentShape.y][j + currentShape.x] = currentShape.code;
+                const i1 = i + currentShape.y;
+                const j1 = j + currentShape.x;
+                if (i1 < 0) {
+                    gameOver();
+                    return;
+                }
+                area[i1][j1] = currentShape.code;
             }
         }
     }
@@ -372,4 +366,42 @@ function freezeShape() {
         }
         area.unshift(newSpaceBlock);
     }
+}
+
+function gameOver() {
+    isGameOver = true;
+    clearInterval(timer);
+
+    const startHeight = (CANVAS_HEIGHT - CANVAS_MESSAGE_SIZE) / 2;
+    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.fillRect(0, startHeight, CANVAS_WIDTH, CANVAS_MESSAGE_SIZE);
+    ctx.font = '48px serif';
+    ctx.fillStyle = 'rgb(255, 255, 255)';
+    ctx.fillText('GAME OVER!', 45, startHeight + 60);
+    ctx.font = '36px serif';
+    ctx.fillText('Press "R" to restart', 55, startHeight + 210);
+}
+
+let area;
+let currentSet;
+let nextSet;
+let currentShape;
+let nextShape;
+let isGameOver;
+let timer;
+
+function restartGame() {
+    isGameOver = false;
+    currentSet = createSet();
+    nextSet = createSet();
+    initShape();
+    initArea();
+    printArea();
+    timer = setInterval(refreshScreen, 800);
+}
+
+document.addEventListener('keydown', keydown);
+
+window.onload = () => {
+    restartGame();
 }
