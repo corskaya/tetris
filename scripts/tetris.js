@@ -456,19 +456,21 @@ function gameOver() {
     clearInterval(timer);
 
     const startHeight = (CANVAS_HEIGHT - CANVAS_MESSAGE_SIZE) / 2;
+    ctx.textAlign = 'center';
     ctx.fillStyle = 'rgb(0, 0, 0)';
     ctx.fillRect(0, startHeight, CANVAS_WIDTH, CANVAS_MESSAGE_SIZE);
     ctx.font = '48px serif';
     ctx.fillStyle = 'rgb(255, 255, 255)';
-    ctx.fillText('GAME OVER!', 45, startHeight + 60);
+    ctx.fillText('GAME OVER!', CANVAS_WIDTH / 2, startHeight + 60);
+    ctx.fillText('Score: ' + score, CANVAS_WIDTH / 2, startHeight + 135);
     ctx.font = '36px serif';
-    ctx.fillText('Press "R" to restart', 55, startHeight + 210);
+    ctx.fillText('Press "R" to restart', CANVAS_WIDTH / 2, startHeight + 210);
 }
 
 function pauseGame() {
     if (isPaused) {
         isPaused = false;
-        timer = setInterval(refreshScreen, 800);
+        timer = setInterval(refreshScreen, interval);
     } else {
         gamePaused();
     }
@@ -479,13 +481,14 @@ function gamePaused() {
     clearInterval(timer);
 
     const startHeight = (CANVAS_HEIGHT - CANVAS_MESSAGE_SIZE) / 2;
+    ctx.textAlign = 'center';
     ctx.fillStyle = 'rgb(0, 0, 0)';
     ctx.fillRect(0, startHeight, CANVAS_WIDTH, CANVAS_MESSAGE_SIZE);
     ctx.font = '48px serif';
     ctx.fillStyle = 'rgb(255, 255, 255)';
-    ctx.fillText('GAME PAUSED', 35, startHeight + 60);
+    ctx.fillText('GAME PAUSED', CANVAS_WIDTH / 2, startHeight + 60);
     ctx.font = '36px serif';
-    ctx.fillText('Press "P" to resume', 55, startHeight + 210);
+    ctx.fillText('Press "P" to resume', CANVAS_WIDTH / 2, startHeight + 210);
 }
 
 let area;
@@ -497,6 +500,7 @@ let isGameOver;
 let isPaused;
 let score;
 let timer;
+let interval;
 
 function restartGame() {
     isGameOver = false;
@@ -508,7 +512,8 @@ function restartGame() {
     printArea();
     score = 0;
     drawScore();
-    timer = setInterval(refreshScreen, 800);
+    interval = 1000;
+    timer = setInterval(refreshScreen, interval);
 }
 
 document.addEventListener('keydown', keydown);
