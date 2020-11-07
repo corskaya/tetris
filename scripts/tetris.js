@@ -21,7 +21,7 @@ const colors = [
     'rgb(255,255,0)',
     'rgb(255,165,0)',
     'rgb(0,0,255)',
-    'rgb(255, 255, 255)'
+    'rgb(255,255,255)'
 ];
 
 const shapes = [
@@ -84,6 +84,11 @@ function fill(i, j, color) {
     ctx.fillRect(j * CELL_SIZE, i * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 }
 
+function fillWithCoordinates(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(y, x, CELL_SIZE, CELL_SIZE);
+}
+
 function stroke(i, j, color, width = CELL_SIZE, height = CELL_SIZE) {
     ctx.strokeStyle = color;
     ctx.strokeRect(j * CELL_SIZE, i * CELL_SIZE, width, height);
@@ -122,23 +127,64 @@ function drawBorder() {
     stroke(0, COLS, 'rgb(0, 0, 0)', CANVAS_INFO_WIDTH, CANVAS_HEIGHT);
 }
 
+function drawNextLabel() {
+    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.font = '36px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('NEXT', CANVAS_WIDTH + CANVAS_INFO_WIDTH / 2, 50);
+}
+
 function drawNextShape() {
-    ctx.clearRect(CANVAS_WIDTH, CELL_SIZE, CANVAS_INFO_WIDTH, CANVAS_HEIGHT);
+    ctx.clearRect(CANVAS_WIDTH, 60, CANVAS_INFO_WIDTH, 4 * CELL_SIZE + 40);
+    ctx.strokeStyle = 'rgb(0, 0, 0)';
+    ctx.strokeRect(CANVAS_WIDTH + CELL_SIZE - 20, 70, 4 * CELL_SIZE + 40, 4 * CELL_SIZE + 40);
+    ctx.fillStyle = 'rgb(245, 245, 245)';
+    ctx.fillRect(CANVAS_WIDTH + CELL_SIZE - 20, 70, 4 * CELL_SIZE + 40, 4 * CELL_SIZE + 40);
+
     let shape = shapes[nextShape.code][nextShape.rotation];
+    let left = shape[0].length;
+    let right = 0;
+    let up = shape.length;
+    let bottom = 0;
 
     for (let i = 0; i < shape.length; i++) {
         for (let j = 0; j < shape[i].length; j++) {
             if (shape[i][j] === 1) {
-                fill(i + 1, j + COLS + 1, colors[nextShape.code]);
+                if (j > right) right = j;
+                if (j < left) left = j;
+                if (i > bottom) bottom = i;
+                if (i < up) up = i;
+            }
+        }
+    }
+
+    let shapeHeight = (bottom - up + 1) * CELL_SIZE;
+    let shapeWidth = (right - left + 1) * CELL_SIZE;
+    let marginUp = (CELL_SIZE * 4 - shapeHeight) / 2;
+    let marginLeft = (CANVAS_INFO_WIDTH - shapeWidth) / 2;
+
+    for (let i = 0; i < shape.length; i++) {
+        for (let j = 0; j < shape[i].length; j++) {
+            if (shape[i][j] === 1) {
+                fillWithCoordinates(90 + marginUp + (i - up) * CELL_SIZE, CANVAS_WIDTH + marginLeft + (j - left) * CELL_SIZE, colors[nextShape.code]);
             }
         }
     }
 }
 
-function drawNextLabel() {
+function drawScoreLabel() {
     ctx.fillStyle = 'rgb(0, 0, 0)';
     ctx.font = '36px serif';
-    ctx.fillText('NEXT', CANVAS_WIDTH + 70, 30);
+    ctx.textAlign = 'center';
+    ctx.fillText('SCORE', CANVAS_WIDTH + CANVAS_INFO_WIDTH / 2, 4 * CELL_SIZE + 160);
+}
+
+function drawScore() {
+    ctx.clearRect(CANVAS_WIDTH, 4 * CELL_SIZE + 160, CANVAS_INFO_WIDTH, 60);
+    ctx.fillStyle = 'rgb(55, 55, 55)';
+    ctx.font = '48px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(score, CANVAS_WIDTH + 120, 4 * CELL_SIZE + 220);
 }
 
 function initShape() {
@@ -390,12 +436,18 @@ function freezeShape() {
         }
     }
 
-    for (let i = ROWS - remainingBlocks.length - 1; i >= 0; i--) {
+    let blocks = ROWS - remainingBlocks.length;
+    for (let i = blocks - 1; i >= 0; i--) {
         let newSpaceBlock = [];
         for (let j = 0; j < COLS; j++) {
             newSpaceBlock.push(Cell.Space);
         }
         area.unshift(newSpaceBlock);
+    }
+
+    if (blocks > 0) {
+        score += (2 ** blocks - 1) * 100;
+        drawScore();
     }
 }
 
@@ -443,6 +495,7 @@ let currentShape;
 let nextShape;
 let isGameOver;
 let isPaused;
+let score;
 let timer;
 
 function restartGame() {
@@ -453,6 +506,8 @@ function restartGame() {
     initShape();
     initArea();
     printArea();
+    score = 0;
+    drawScore();
     timer = setInterval(refreshScreen, 800);
 }
 
@@ -461,4 +516,5 @@ document.addEventListener('keydown', keydown);
 window.onload = () => {
     restartGame();
     drawNextLabel();
+    drawScoreLabel();
 }
